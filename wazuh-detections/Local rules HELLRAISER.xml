@@ -1,0 +1,145 @@
+<!-- Local rules -->
+
+<!-- Modify it at your will. -->
+<!-- Copyright (C) 2015, Wazuh Inc. -->
+
+<!-- Example -->
+<group name="local,syslog,sshd,">
+
+  <!--
+  Dec 10 01:02:02 host sshd[1234]: Failed none for root from 1.1.1.1 port 1066 ssh2
+  -->
+  <rule id="100001" level="5">
+    <if_sid>5716</if_sid>
+    <srcip>1.1.1.1</srcip>
+    <description>sshd: authentication failed from IP 1.1.1.1.</description>
+    <group>authentication_failed,pci_dss_10.2.4,pci_dss_10.2.5,</group>
+  </rule>
+
+<rule id="100300" level="14">
+  <if_sid>5716</if_sid>
+  <description>Falha na coleta de logs - agente desconectado</description>
+</rule>
+
+<rule id="100401" level="12">
+  <if_sid>60122</if_sid>
+  <description>Falha de login Windows - alerta PCI</description>
+  <mitre>T1110</mitre>
+</rule>
+
+<rule id="100402" level="12">
+  <if_sid>60105</if_sid>
+  <description>Uso de privilégio administrativo</description>
+  <mitre>T1078</mitre>
+</rule>
+
+<rule id="100403" level="12">
+  <if_sid>60105</if_sid>
+  <time>18:00-07:00</time>
+  <description>Login fora do horário comercial</description>
+</rule>
+
+</group>
+
+<group name="fortigate,ips,attack">
+  <rule id="100100" level="12">
+    <if_group>fortigate</if_group>
+    <field name="fortigate.subtype">ips</field>
+    <match>action=blocked</match>
+    <description>FortiGate IPS bloqueou ataque</description>
+    <mitre>T1046,T1059</mitre>
+  </rule>
+</group>
+
+<group name="fortigate,vpn,auth">
+  <rule id="100110" level="10">
+    <if_group>fortigate</if_group>
+    <match>subtype=vpn</match>
+    <match>action=failed</match>
+    <description>Falha de autenticação VPN no FortiGate</description>
+    <mitre>T1110</mitre>
+  </rule>
+</group>
+
+<group name="fortigate,vpn,bruteforce">
+  <rule id="100111" level="13" frequency="5" timeframe="300">
+    <if_matched_sid>100110</if_matched_sid>
+    <same_source_ip />
+    <description>Possível brute force VPN no FortiGate</description>
+    <mitre>T1110</mitre>
+  </rule>
+</group>
+
+<group name="fortigate,admin,access">
+  <rule id="100120" level="10">
+    <if_group>fortigate</if_group>
+    <match>type=event</match>
+    <match>user=admin</match>
+    <description>Login administrativo no FortiGate</description>
+    <mitre>T1078</mitre>
+  </rule>
+</group>
+
+<group name="fortigate,noise">
+  <rule id="100200" level="0">
+    <if_group>fortigate</if_group>
+    <match>action=accept</match>
+    <description>Discard tráfego permitido FortiGate</description>
+  </rule>
+</group>
+
+<!-- bloqueios de seguranca - trafego geral -->
+
+<group name="fortigate,security,blocked">
+  <rule id="200100" level="10">
+    <if_group>fortigate</if_group>
+    <match>action=deny</match>
+    <description>FortiGate bloqueou tráfego</description>
+  </rule>
+</group>
+
+<!-- ips detectado -->
+
+<group name="fortigate,ips">
+  <rule id="200200" level="11">
+    <if_group>fortigate</if_group>
+    <field name="fortigate.subtype">ips</field>
+    <description>Evento IPS detectado no FortiGate</description>
+  </rule>
+</group>
+
+<!-- vpn falha de login -->
+
+<group name="fortigate,vpn,auth">
+  <rule id="200300" level="9">
+    <if_group>fortigate</if_group>
+    <match>subtype=vpn</match>
+    <match>action=failed</match>
+    <description>Falha de autenticação VPN no FortiGate</description>
+  </rule>
+</group>
+
+<!-- brute force vpn -->
+
+<group name="fortigate,vpn,bruteforce">
+  <rule id="200301" level="13" frequency="5" timeframe="300">
+    <if_matched_sid>200300</if_matched_sid>
+    <same_source_ip />
+    <description>Possível brute force VPN no FortiGate</description>
+  </rule>
+</group>
+
+<!-- Mudanca de grupo AD -->
+
+<group name="windows,active_directory,group_membership,">
+
+  <rule id="100500" level="10">
+    <if_sid>60103</if_sid>
+    <field name="win.system.eventID">4728|4732|4756</field>
+    <description>Usuário adicionado a grupo no Active Directory</description>
+    <mitre>
+      <id>T1098</id>
+    </mitre>
+  </rule>
+
+</group>
